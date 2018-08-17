@@ -1,27 +1,47 @@
-const path = require("path");
-const puppeteer = require("puppeteer");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const { argv } = require("yargs");
 
-const run = async () => {
-  const { port, script, folder } = argv;
-  const size = argv.size || 400;
+const folder = argv.folder;
+//   const output = path.join(
+//     folder,
+//     ".sketchbook_cli",
+//     "screens",
+//     script.replace(/.js$/, ".png")
+//   );
 
-  const url = `http://localhost:${port}/sketch/${script.replace(/.js$/, "")} `;
-  const output = path.join(
-    folder,
-    ".sketchbook_cli",
-    "screens",
-    script.replace(/.js$/, ".png")
-  );
+const createWindow = () => {
+  let win = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      webgl: true,
+      offscreen: true
+    }
+  });
 
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
+  win.setContentSize(600, 600);
+  win.setResizable(false);
 
-  await page.setViewport({ width: size, height: size });
-  await page.goto(url, { waituntil: "domcontentloaded" });
-  await page.screenshot({ path: output });
+  win.webContents.loadURL(`file://${__dirname}/screen-shotter.html`);
 
-  await browser.close();
+  win.on("closed", () => (win = null));
+
+  win.webContents.on("did-finish-load", () => {
+    win.webContents.send("load", "test");
+  });
+
+  ipcMain.on("loaded", (a, b, c) => {
+    console.log([a, b, c]);
+  });
 };
 
-run();
+const start = () => {
+  app.dock.hide();
+
+  app.on("ready", createWindow);
+
+  app.on("win-all-closed", () => {
+    app.quit();
+  });
+};
+
+start();

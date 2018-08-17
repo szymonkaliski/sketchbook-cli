@@ -1,0 +1,10 @@
+{
+  "name": "sketchbook-cli-test",
+  "private": true,
+  "version": "1.0.0",
+  "author": "Szymon Kaliski <hi@szymonkaliski.com> (http://szymonkaliski.com)",
+  "license": "MIT",
+  "dependencies": {
+    "regl": "^1.3.7"
+  }
+}

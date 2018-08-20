@@ -20,6 +20,10 @@ module.exports = class {
 
     this.db = level(path.join(folderPath, DB_FILE_NAME, "db"));
 
+    // TODO
+    // grab screenshot - talk with electron through ipc
+    // once done, callback so next screen can be grabbed
+    // notify listeners so results can be pushed in real time
     this.grabQueue = async.queue((task, callback) => {});
 
     this.notifyCallbacks = [];

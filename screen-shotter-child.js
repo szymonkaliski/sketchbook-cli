@@ -21,6 +21,9 @@ const createWindow = () => {
   win.setContentSize(600, 600);
   win.setResizable(false);
 
+  // TODO: load url here from express, instead of html + require() - this might be problematic to resolve proper node_modules
+  // inject screenshot into the JS:
+  // https://github.com/electron/electron/issues/2048#issuecomment-115092053
   win.webContents.loadURL(`file://${__dirname}/screen-shotter.html`);
 
   win.on("closed", () => (win = null));

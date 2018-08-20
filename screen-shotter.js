@@ -1,15 +1,20 @@
 const async = require("async");
 const crypto = require("crypto");
 const fs = require("fs");
+const ipc = require("node-ipc");
 const level = require("level");
 const path = require("path");
 const { spawn } = require("child_process");
 
 const DB_FILE_NAME = ".sketchbook_cli";
-const CONCURRENT_SHOTS = 1;
+
+ipc.config.id = "server";
+ipc.config.retry = 2000;
+ipc.config.silent = true;
+ipc.config.sync = true;
 
 module.exports = class {
-  constructor({ folderPath }) {
+  constructor({ folderPath, port }) {
     if (!fs.existsSync(path.join(folderPath, DB_FILE_NAME))) {
       fs.mkdirSync(path.join(folderPath, DB_FILE_NAME));
     }
@@ -19,91 +24,95 @@ module.exports = class {
     }
 
     this.db = level(path.join(folderPath, DB_FILE_NAME, "db"));
-
-    // TODO
-    // grab screenshot - talk with electron through ipc
-    // once done, callback so next screen can be grabbed
-    // notify listeners so results can be pushed in real time
-    this.grabQueue = async.queue((task, callback) => {});
-
+    this.folderPath = folderPath;
     this.notifyCallbacks = [];
 
-    this.child = spawn(path.join(__dirname, "node_modules/.bin/electron"), [
-      "screen-shotter-child.js",
-      "--folder",
-      folderPath
-    ]);
+    ipc.serve(() => {
+      this.child = spawn(path.join(__dirname, "node_modules/.bin/electron"), [
+        "screen-shotter-child.js",
+        "--port",
+        port,
+        "--folder",
+        folderPath
+      ]);
 
-    this.child.stdout.on("data", data => {
-      console.log(`[screen-shotter-child stdout] ${data}`);
+      this.child.stdout.on("data", data => {
+        console.log(`[screen-shotter-child stdout] ${data}`);
+      });
+
+      this.child.stderr.on("data", data => {
+        console.log(`[screen-shotter-child stderr] ${data}`);
+      });
+
+      this.child.on("close", code => {
+        console.log(`[screen-shotter-child exit] ${code}`);
+      });
+
+      ipc.server.on("ready", (_, socket) => {
+        console.log("child ready!");
+
+        this.grabQueue = async.queue((task, callback) => {
+          const { file, hash } = task;
+
+          this.db.get(file, (err, value) => {
+            if (!err && value === hash) {
+              console.log(`${file} [${hash}] was already screenshotted`);
+              return callback();
+            }
+
+            console.log(`${file} [${hash}] shotting...`);
+
+            ipc.server.emit(socket, "shot", task);
+
+            ipc.server.on("shot-done", data => {
+              ipc.server.off("shot-done", "*");
+
+              this.db.put(file, hash, () => {
+                console.log(`${file} [${hash}] done!`);
+                this.notifyCallbacks.forEach(callback => callback());
+                callback();
+              });
+            });
+          });
+        });
+
+        this.grab();
+      });
     });
 
-    this.child.stderr.on("data", data => {
-      console.log(`[screen-shotter-child stderr] ${data}`);
-    });
-
-    this.child.on("close", code => {
-      console.log(`[screen-shotter-child exit] ${code}`);
-    });
-
-    this.grab();
+    ipc.server.start();
   }
 
   on(key, callback) {
-    if (key === "shots") {
+    if (key === "shot") {
       this.notifyCallbacks.push(callback);
     }
   }
 
   grab() {
-    // if (this.isGrabbing) {
-    //   return;
-    // }
-    // this.isGrabbing = true;
-    // const files = fs
-    //   .readdirSync(this.folderPath)
-    //   .filter(file => file.endsWith(".js"))
-    //   .map(file => ({
-    //     file,
-    //     hash: crypto
-    //       .createHash("md5")
-    //       .update(
-    //         fs.readFileSync(path.join(this.folderPath, file), {
-    //           encoding: "utf8"
-    //         })
-    //       )
-    //       .digest("hex")
-    //   }));
-    // async.mapLimit(
-    //   files,
-    //   CONCURRENT_SHOTS,
-    //   ({ file, hash }, callback) => {
-    //     this.db.get(file, (err, value) => {
-    //       if (!err && value === hash) {
-    //         console.log(`${file} [${hash}] was already screenshotted`);
-    //         return callback();
-    //       }
-    //       console.log(`${file} [${hash}] shotting...`);
-    //       const child = fork(
-    //         path.join(__dirname, "./screen-shotter-child.js"),
-    //         ["--script", file, "--port", this.port, "--folder", this.folderPath]
-    //       );
-    //       child.on("error", err => {
-    //         console.log(`${file} [${hash}] error ${err}`);
-    //         callback(err);
-    //       });
-    //       child.on("exit", () => {
-    //         this.db.put(file, hash, () => {
-    //           console.log(`${file} [${hash}] done!`);
-    //           callback();
-    //         });
-    //       });
-    //     });
-    //   },
-    //   () => {
-    //     this.notifyCallbacks.forEach(callback => callback());
-    //     this.isGrabbing = false;
-    //   }
-    // );
+    const tasks = fs
+      .readdirSync(this.folderPath)
+      .filter(file => file.endsWith(".js"))
+      .map(file => {
+        const content = fs.readFileSync(path.join(this.folderPath, file), {
+          encoding: "utf8"
+        });
+
+        // this is super stupid way to do this
+        const autoShot = content.indexOf("window.sketchbook.shot()") === -1;
+
+        return {
+          file,
+          autoShot,
+          hash: crypto
+            .createHash("md5")
+            .update(content)
+            .digest("hex")
+        };
+      });
+
+    tasks.forEach(task => {
+      this.grabQueue.push(task);
+    });
   }
 };

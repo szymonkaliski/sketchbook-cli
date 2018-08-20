@@ -1,13 +1,40 @@
 const { ipcRenderer } = require("electron");
 
-// TODO: take shot when this fn is called,
-// or if it's not implemented (regex on code text), call it after require
-window.sketchbook = {
-  shot: () => {
-    console.log("shot!");
-  }
-};
+let port;
+let webview;
+
+ipcRenderer.on("port", (_, data) => (port = data.port));
 
 ipcRenderer.on("load", (_, data) => {
-  console.log({ data });
+  if (webview) {
+    document.body.removeChild(webview);
+    webview = undefined;
+  }
+
+  webview = document.createElement("webview");
+
+  webview.nodeintegration = true;
+  webview.preload = "./screen-shotter-preload.js";
+  webview.src = `http://localhost:${port}/sketch/${data.file.replace(/.js$/, "")}`;
+
+  document.body.appendChild(webview);
+
+  const onLoaded = () => {
+    if (data.autoShot) {
+      setTimeout(() => {
+        ipcRenderer.send("shot-ready");
+      }, 10);
+    }
+
+    webview.removeEventListener("did-stop-loading", onLoaded);
+  };
+
+  webview.addEventListener("did-stop-loading", onLoaded);
+});
+
+ipcRenderer.on("cleanup", () => {
+  if (webview) {
+    document.body.removeChild(webview);
+    webview = undefined;
+  }
 });

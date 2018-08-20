@@ -100,7 +100,7 @@ const start = ({ port }) => {
 
   const screenShotter = new ScreenShotter({ folderPath, port });
 
-  screenShotter.on("shots", updateMain);
+  screenShotter.on("shot", updateMain);
 
   const grabIfOnMain = () => {
     const isOnMain = [...wss.clients.values()].some(ws => ws.mainPage);

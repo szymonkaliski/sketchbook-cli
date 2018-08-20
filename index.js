@@ -129,7 +129,7 @@ const start = ({ port }) => {
     res.send(`
       <html>
         <head>
-          <title>sketchbook-cli</title>
+          <title>sketchbook: ${folder}</title>
           <style type="text/css">
             ${TACHYONS_CSS}
           </style>
@@ -166,7 +166,7 @@ const start = ({ port }) => {
     res.send(`
       <html>
         <head>
-          <title>sketchbook-cli: ${req.params.script}</title>
+          <title>sketchbook: ${req.params.script}</title>
         </head>
         <body>
           <script>

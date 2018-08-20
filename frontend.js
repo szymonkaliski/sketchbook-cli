@@ -66,7 +66,6 @@ function connect() {
       }
 
       if (data.files) {
-        console.log(data.files);
         state.resetIn("sketches", data.files);
       }
     };
@@ -118,7 +117,7 @@ const root = state => {
   return [
     "div.w-100.sans-serif.bg-white",
     [
-      ["h2.f3.fw4.pa3.mv0", "sketchbook-cli"],
+      ["h2.f3.fw4.pa3.mv0", document.title],
       [
         "div.cf.pa2",
         (state.sketches || []).map(({ file, shot, hash }) => {

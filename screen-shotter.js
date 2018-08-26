@@ -26,14 +26,21 @@ module.exports = class {
     this.db = level(path.join(folderPath, DB_FILE_NAME, "db"));
     this.folderPath = folderPath;
     this.notifyCallbacks = [];
+    this.port = port;
+
+    this.init();
+  }
+
+  init() {
+    console.log("[screen-shotter-child] initing");
 
     ipc.serve(() => {
       this.child = spawn(path.join(__dirname, "node_modules/.bin/electron"), [
-        "screen-shotter-child.js",
+        path.join(__dirname, "screen-shotter-child.js"),
         "--port",
-        port,
+        this.port,
         "--folder",
-        folderPath
+        this.folderPath
       ]);
 
       this.child.stdout.on("data", data => {
@@ -46,11 +53,12 @@ module.exports = class {
 
       this.child.on("close", code => {
         console.log(`[screen-shotter-child exit] ${code}`);
+
+        ipc.server.stop();
+        setTimeout(() => this.init(), 100);
       });
 
       ipc.server.on("ready", (_, socket) => {
-        console.log("child ready!");
-
         this.grabQueue = async.queue((task, callback) => {
           const { file, hash } = task;
 
@@ -64,7 +72,7 @@ module.exports = class {
 
             ipc.server.emit(socket, "shot", task);
 
-            ipc.server.on("shot-done", data => {
+            ipc.server.on("shot-done", () => {
               ipc.server.off("shot-done", "*");
 
               this.db.put(file, hash, () => {
@@ -90,6 +98,10 @@ module.exports = class {
   }
 
   grab() {
+    if (!this.grabQueue) {
+      return;
+    }
+
     const tasks = fs
       .readdirSync(this.folderPath)
       .filter(file => file.endsWith(".js"))

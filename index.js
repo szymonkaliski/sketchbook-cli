@@ -30,6 +30,11 @@ if (!folder) {
   process.exit(0);
 }
 
+if (!fs.existsSync(folder)) {
+  console.log(`${folder} doesn't exist`);
+  process.exit(0);
+}
+
 const start = ({ port }) => {
   const app = express();
   const server = app.listen(port);
@@ -109,6 +114,7 @@ const start = ({ port }) => {
       return;
     }
 
+    updateMain();
     screenShotter.grab();
   };
 
@@ -148,7 +154,11 @@ const start = ({ port }) => {
       return res.send();
     }
 
-    return browserify(scriptFile, { gzip: true })(req, res, next);
+    return browserify(scriptFile, { gzip: true, cache: "dynamic" })(
+      req,
+      res,
+      next
+    );
   };
 
   const handlePage = (req, res) => {
@@ -180,7 +190,11 @@ const start = ({ port }) => {
 
   app.get(
     "/frontend.js",
-    browserify(path.join(__dirname, "frontend.js"), { gzip: true })
+    browserify(path.join(__dirname, "frontend.js"), {
+      gzip: true,
+      cache: true,
+      precompile: true
+    })
   );
 
   app.get("/sketch/:script", (req, res, next) => {

@@ -49,14 +49,17 @@ const createWindow = ({ ipc }) => {
 
   ipcMain.on("shot-ready", () => {
     win.webContents.capturePage(image => {
-      const imgPath = path.join(captureDir, currentFile.replace(/.js$/, ".png"));
+      const imgPath = path.join(
+        captureDir,
+        currentFile.replace(/.js$/, ".png")
+      );
 
-      fs.writeFileSync(imgPath, image.toPNG());
-
-      setTimeout(() => {
-        win.webContents.send("cleanup");
-        ipc.of.server.emit("shot-done");
-      }, 10);
+      fs.writeFile(imgPath, image.toPNG(), () => {
+        setTimeout(() => {
+          win.webContents.send("cleanup");
+          ipc.of.server.emit("shot-done");
+        }, 1);
+      });
     });
   });
 };

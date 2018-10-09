@@ -1,5 +1,6 @@
 const async = require("async");
 const crypto = require("crypto");
+const debug = require("debug")("screen-shotter");
 const fs = require("fs");
 const ipc = require("node-ipc");
 const level = require("level");
@@ -32,27 +33,30 @@ module.exports = class {
   }
 
   init() {
-    console.log("[screen-shotter-child] initing");
+    debug("starting");
 
     ipc.serve(() => {
-      this.child = spawn(path.join(__dirname, "node_modules/.bin/electron"), [
-        path.join(__dirname, "screen-shotter-child.js"),
-        "--port",
-        this.port,
-        "--folder",
-        this.folderPath
-      ]);
+      this.child = spawn(
+        path.join(__dirname, "../node_modules/.bin/electron"),
+        [
+          path.join(__dirname, "child.js"),
+          "--port",
+          this.port,
+          "--folder",
+          this.folderPath
+        ]
+      );
 
       this.child.stdout.on("data", data => {
-        console.log(`[screen-shotter-child stdout] ${data}`);
+        debug(`[child stdout] ${data}`);
       });
 
       this.child.stderr.on("data", data => {
-        console.log(`[screen-shotter-child stderr] ${data}`);
+        debug(`[child stderr] ${data}`);
       });
 
       this.child.on("close", code => {
-        console.log(`[screen-shotter-child exit] ${code}`);
+        debug(`[child exit] ${code}`);
 
         ipc.server.stop();
         setTimeout(() => this.init(), 100);
@@ -64,11 +68,11 @@ module.exports = class {
 
           this.db.get(file, (err, value) => {
             if (!err && value === hash) {
-              console.log(`${file} [${hash}] was already screenshotted`);
+              debug(`ignoring: ${file} (${hash})`);
               return callback();
             }
 
-            console.log(`${file} [${hash}] shotting...`);
+            debug(`shotting: ${file} (${hash})`);
 
             ipc.server.emit(socket, "shot", task);
 
@@ -76,7 +80,7 @@ module.exports = class {
               ipc.server.off("shot-done", "*");
 
               this.db.put(file, hash, () => {
-                console.log(`${file} [${hash}] done!`);
+                debug(`finished: ${file} (${hash})`);
                 this.notifyCallbacks.forEach(callback => callback());
                 callback();
               });

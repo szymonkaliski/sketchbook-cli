@@ -1,4 +1,4 @@
-// stolen from budo
+// shamelessly stolen from budo
 
 function connect() {
   var reconnectPoll = 1000;

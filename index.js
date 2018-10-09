@@ -12,6 +12,8 @@ const { argv } = require("yargs");
 
 const ScreenShotter = require("./screen-shotter");
 
+const RUN_SCREEN_SHOTTER = argv.screenshots !== false;
+
 const WATCH_IGNORED = /\.git|node_modules|bower_components/;
 
 const TACHYONS_CSS = fs.readFileSync(
@@ -103,9 +105,10 @@ const start = ({ port }) => {
     });
   });
 
-  const screenShotter = new ScreenShotter({ folderPath, port });
-
-  screenShotter.on("shot", updateMain);
+  if (RUN_SCREEN_SHOTTER) {
+    const screenShotter = new ScreenShotter({ folderPath, port });
+    screenShotter.on("shot", updateMain);
+  }
 
   const grabIfOnMain = () => {
     const isOnMain = [...wss.clients.values()].some(ws => ws.mainPage);
@@ -115,7 +118,10 @@ const start = ({ port }) => {
     }
 
     updateMain();
-    screenShotter.grab();
+
+    if (RUN_SCREEN_SHOTTER) {
+      screenShotter.grab();
+    }
   };
 
   chokidar
@@ -130,7 +136,9 @@ const start = ({ port }) => {
   app.use(express.static(folderPath));
 
   app.get("/", (req, res) => {
-    screenShotter.grab();
+    if (RUN_SCREEN_SHOTTER) {
+      screenShotter.grab();
+    }
 
     res.send(`
       <html>
@@ -205,9 +213,13 @@ const start = ({ port }) => {
     }
   });
 
-  console.log(`running on: http://localhost:${port}`);
+  console.log(`sketchbook-cli running on: http://localhost:${port}`);
 };
 
-getPort({ port }).then(port => {
-  start({ port });
+getPort({ port }).then(port => start({ port }));
+
+process.on("unhandledRejection", e => {
+  if (e) {
+    console.log(e);
+  }
 });

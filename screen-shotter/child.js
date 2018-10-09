@@ -30,7 +30,7 @@ const createWindow = ({ ipc }) => {
   win.setContentSize(600, 600);
   win.setResizable(false);
 
-  win.webContents.loadURL(`file://${__dirname}/screen-shotter.html`);
+  win.webContents.loadURL(`file://${__dirname}/index.html`);
 
   win.on("closed", () => (win = null));
 

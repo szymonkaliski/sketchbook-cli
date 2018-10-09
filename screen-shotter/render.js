@@ -14,7 +14,7 @@ ipcRenderer.on("load", (_, data) => {
   webview = document.createElement("webview");
 
   webview.nodeintegration = true;
-  webview.preload = "./screen-shotter-preload.js";
+  webview.preload = "./preload.js";
   webview.src = `http://localhost:${port}/sketch/${data.file.replace(/.js$/, "")}`;
 
   document.body.appendChild(webview);

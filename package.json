@@ -14,6 +14,7 @@
     "@thi.ng/hdom": "^3.0.32",
     "async": "^2.6.1",
     "browserify-middleware": "^8.1.1",
+    "debug": "^4.1.0",
     "electron": "^2.0.7",
     "express": "^4.16.3",
     "fswatch": "^0.1.4",

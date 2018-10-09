@@ -6,7 +6,7 @@ const state = new Atom({ inited: false });
 const CHECKERBOARD_PNG =
   "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAAK0lEQVQ4y2P8//8/A25w7949PLJMDBSAUc0jQzML/jSkpKQ0GmCjminRDADJNQjBr5nbigAAAABJRU5ErkJggg==')";
 
-function connect() {
+const connect = () => {
   const reconnectPoll = 1000;
   const maxRetries = 50;
   const hostname = document.location.hostname;
@@ -16,40 +16,10 @@ function connect() {
   let isReconnecting = false;
   let reconnectInterval;
   let retries = 0;
+  let socket;
+  let scheduleReconnect;
 
-  let socket = createWebSocket();
-
-  function scheduleReconnect() {
-    if (retries >= maxRetries) {
-      console.warn(
-        "[sketchbook-cli] disconnected, exceeded retry count, please reload the page to retry"
-      );
-
-      return;
-    }
-
-    if (!isReconnecting) {
-      isReconnecting = true;
-      console.warn("[sketchbook-cli] disconnected, retrying...");
-    }
-
-    retries++;
-
-    clearTimeout(reconnectInterval);
-
-    reconnectInterval = setTimeout(reconnect, reconnectPoll);
-  }
-
-  function reconnect() {
-    if (socket) {
-      // force close the existing socket
-      socket.onclose = function() {};
-      socket.close();
-    }
-    socket = createWebSocket();
-  }
-
-  function createWebSocket() {
+  const createWebSocket = () => {
     const wsUrl = "ws://" + host;
     const ws = new window.WebSocket(wsUrl);
 
@@ -96,8 +66,40 @@ function connect() {
     };
 
     return ws;
-  }
-}
+  };
+
+  const reconnect = () => {
+    if (socket) {
+      socket.onclose = () => {};
+      socket.close();
+    }
+
+    socket = createWebSocket();
+  };
+
+  scheduleReconnect = () => {
+    if (retries >= maxRetries) {
+      console.warn(
+        "[sketchbook-cli] disconnected, exceeded retry count, please reload the page to retry"
+      );
+
+      return;
+    }
+
+    if (!isReconnecting) {
+      isReconnecting = true;
+      console.warn("[sketchbook-cli] disconnected, retrying...");
+    }
+
+    retries++;
+
+    clearTimeout(reconnectInterval);
+
+    reconnectInterval = setTimeout(reconnect, reconnectPoll);
+  };
+
+  socket = createWebSocket();
+};
 
 const domUpdate = (parent, root, state) => {
   let prev = [];
@@ -151,8 +153,5 @@ const root = state => {
 };
 
 domUpdate(document.body, root, state);
-
-// start
 state.resetIn("inited", true);
-
 connect();

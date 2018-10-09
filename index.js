@@ -105,8 +105,10 @@ const start = ({ port }) => {
     });
   });
 
+  let screenShotter;
+
   if (RUN_SCREEN_SHOTTER) {
-    const screenShotter = new ScreenShotter({ folderPath, port });
+    screenShotter = new ScreenShotter({ folderPath, port });
     screenShotter.on("shot", updateMain);
   }
 
@@ -119,7 +121,7 @@ const start = ({ port }) => {
 
     updateMain();
 
-    if (RUN_SCREEN_SHOTTER) {
+    if (screenShotter) {
       screenShotter.grab();
     }
   };
@@ -136,7 +138,7 @@ const start = ({ port }) => {
   app.use(express.static(folderPath));
 
   app.get("/", (req, res) => {
-    if (RUN_SCREEN_SHOTTER) {
+    if (screenShotter) {
       screenShotter.grab();
     }
 

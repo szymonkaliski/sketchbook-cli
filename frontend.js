@@ -124,6 +124,7 @@ const root = state => {
         "div.cf.pa2",
         (state.sketches || []).map(({ file, shot, hash }) => {
           const screenFile = file.replace(/.js$/, ".png");
+          const t = Date.now();
 
           return [
             "div.fl.w-50.w-33-m.w-25-l.pa2",
@@ -135,7 +136,7 @@ const root = state => {
                   ? [
                       "img.w-100.db.outline.black-10",
                       {
-                        src: `/.sketchbook_cli/screens/${screenFile}?t=${hash}`
+                        src: `/.sketchbook_cli/screens/${screenFile}?t=${hash}@${t}`
                       }
                     ]
                   : [

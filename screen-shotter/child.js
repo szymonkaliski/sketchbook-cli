@@ -1,8 +1,8 @@
 const fs = require("fs");
 const ipc = require("node-ipc");
 const path = require("path");
+const subarg = require("subarg");
 const { app, BrowserWindow, ipcMain } = require("electron");
-const { argv } = require("yargs");
 
 ipc.config.id = "child";
 ipc.config.retry = 2000;
@@ -11,6 +11,7 @@ ipc.config.sync = true;
 
 const IS_HIDDEN = true;
 
+const argv = subarg(process.argv.slice(2));
 const { port, folder } = argv;
 const captureDir = path.join(folder, ".sketchbook_cli", "screens");
 

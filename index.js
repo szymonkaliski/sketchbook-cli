@@ -7,12 +7,8 @@ const express = require("express");
 const fs = require("fs");
 const getPort = require("get-port");
 const path = require("path");
+const subarg = require("subarg");
 const { Server: WebSocketServer } = require("ws");
-const { argv } = require("yargs");
-
-const ScreenShotter = require("./screen-shotter");
-
-const RUN_SCREEN_SHOTTER = argv.screenshots !== false;
 
 const WATCH_IGNORED = /\.git|node_modules|bower_components/;
 
@@ -24,8 +20,12 @@ const CLIENT_RELOAD_CODE = fs.readFileSync(
   path.join(__dirname, "live-reload.js")
 );
 
+const ScreenShotter = require("./screen-shotter");
+
+const argv = subarg(process.argv.slice(2));
 const port = argv.port || "3000";
 const folder = argv._[0];
+const runScreenShotter = argv.screenshots !== false;
 
 if (!folder) {
   console.log("Provide folder with sketches as an argument");
@@ -36,6 +36,35 @@ if (!fs.existsSync(folder)) {
   console.log(`${folder} doesn't exist`);
   process.exit(0);
 }
+
+const genTransform = args => {
+  const ts = Array.isArray(args) ? args : [args];
+
+  return ts
+    .map(t => {
+      if (typeof t === "object") {
+        const transformName = t._[0];
+
+        const transformOpts = Object.keys(t)
+          .filter(key => key !== "_")
+          .map(key => {
+            const v = t[key];
+            return [key, v._ !== undefined ? v._ : v];
+          })
+          .reduce((memo, [k, v]) => Object.assign(memo, { [k]: v }), {});
+
+        return [transformName, transformOpts];
+      } else if (typeof t === "string") {
+        return t;
+      } else {
+        console.warn(`Unable to parse transform: ${t}`);
+        return undefined;
+      }
+    })
+    .filter(_ => _ !== undefined);
+};
+
+const transform = argv.t ? genTransform(argv.t) : [];
 
 const start = ({ port }) => {
   const app = express();
@@ -107,7 +136,7 @@ const start = ({ port }) => {
 
   let screenShotter;
 
-  if (RUN_SCREEN_SHOTTER) {
+  if (runScreenShotter) {
     screenShotter = new ScreenShotter({ folderPath, port });
     screenShotter.on("shot", updateMain);
   }
@@ -164,7 +193,7 @@ const start = ({ port }) => {
       return res.send();
     }
 
-    return browserify(scriptFile, { gzip: true, cache: "dynamic" })(
+    return browserify(scriptFile, { gzip: true, cache: "dynamic", transform })(
       req,
       res,
       next

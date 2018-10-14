@@ -26,6 +26,7 @@ Then open the URL that will be printed out in the console. You can open any of t
 
 - `--port 3000` - run on port `3000` instead of default random one
 - `--no-screenshots` - disable screenshotting (useful when working on battery)
+- `-t` - add browserify transform (eg. `npm i glslify && sketchbook-cli . -t glslify`)
 
 ## Info
 
@@ -35,7 +36,6 @@ The screenshot is generated immediately after page has loaded, which can sometim
 
 ## Future Work
 
-- [ ] support for `browserify` transfors
 - [ ] exporting gallery to static files
 
 I'm happy to merge PRs!

@@ -1,6 +1,6 @@
 {
   "name": "sketchbook-cli",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "a place for your sketches",
   "main": "index.js",
   "author": "Szymon Kaliski <hi@szymonkaliski.com> (http://szymonkaliski.com)",
@@ -22,9 +22,8 @@
     "level": "^4.0.0",
     "lodash": "^4.17.10",
     "node-ipc": "^9.1.1",
+    "subarg": "^1.0.0",
     "tachyons": "^4.11.1",
-    "watchify": "^3.11.0",
-    "ws": "^6.0.0",
-    "yargs": "^12.0.1"
+    "ws": "^6.0.0"
   }
 }

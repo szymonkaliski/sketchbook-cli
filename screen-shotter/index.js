@@ -37,7 +37,7 @@ module.exports = class {
 
     ipc.serve(() => {
       this.child = spawn(
-        path.join(__dirname, "../node_modules/.bin/electron"),
+        path.join(path.dirname(require.resolve("electron")), "cli.js"),
         [
           path.join(__dirname, "child.js"),
           "--port",

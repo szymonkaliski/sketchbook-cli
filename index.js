@@ -12,9 +12,7 @@ const { Server: WebSocketServer } = require("ws");
 
 const WATCH_IGNORED = /\.git|node_modules|bower_components/;
 
-const TACHYONS_CSS = fs.readFileSync(
-  path.join(__dirname, "node_modules/tachyons/css/tachyons.min.css")
-);
+const TACHYONS_CSS = fs.readFileSync(require.resolve("tachyons"));
 
 const CLIENT_RELOAD_CODE = fs.readFileSync(
   path.join(__dirname, "live-reload.js")

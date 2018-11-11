@@ -1,6 +1,6 @@
 {
   "name": "sketchbook-cli",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "a place for your sketches",
   "main": "index.js",
   "author": "Szymon Kaliski <hi@szymonkaliski.com> (http://szymonkaliski.com)",
@@ -8,6 +8,9 @@
   "preferGlobal": true,
   "bin": {
     "sketchbook-cli": "index.js"
+  },
+  "scripts": {
+    "test": "node index.js --port 3000 ./test/"
   },
   "dependencies": {
     "@thi.ng/atom": "^1.4.6",

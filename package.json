@@ -1,6 +1,6 @@
 {
   "name": "sketchbook-cli",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "a place for your sketches",
   "main": "index.js",
   "author": "Szymon Kaliski <hi@szymonkaliski.com> (http://szymonkaliski.com)",

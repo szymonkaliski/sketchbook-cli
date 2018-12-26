@@ -1,5 +1,11 @@
 // shamelessly stolen from budo
 
+function dynamicallyLoadScript(url) {
+  var script = document.createElement("script");
+  script.src = url;
+  document.head.appendChild(script);
+}
+
 function connect() {
   var reconnectPoll = 1000;
   var maxRetries = 50;

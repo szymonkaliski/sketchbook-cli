@@ -76,13 +76,21 @@ const start = ({ port }) => {
   const folderGlob = `${folderPath}/*.js`;
 
   const browserifies = {};
+  let toLiveReload = [];
 
   const liveReload = file => {
+    let didUpdate = false;
+
     wss.clients.forEach(ws => {
       if (file.endsWith(`${ws.script}.js`)) {
         ws.send(JSON.stringify({ event: "reload" }));
+        didUpdate = true;
       }
     });
+
+    if (!didUpdate) {
+      toLiveReload.push(file);
+    }
   };
 
   const updateMain = () => {
@@ -124,6 +132,15 @@ const start = ({ port }) => {
 
       if (script) {
         ws.script = script;
+
+        toLiveReload = toLiveReload.filter(file => {
+          if (file.endsWith(`${ws.script}.js`)) {
+            ws.send(JSON.stringify({ event: "reload" }));
+            return false;
+          }
+
+          return true;
+        });
       }
 
       if (mainPage) {
@@ -156,14 +173,9 @@ const start = ({ port }) => {
 
   chokidar
     .watch(folderGlob, { ignored: WATCH_IGNORED })
-    .on("add", grabIfOnMain)
-    .on("unlink", grabIfOnMain)
-    .on("change", file => {
-      liveReload(file);
-      grabIfOnMain();
-    });
+    .on("all", grabIfOnMain);
 
-  app.use(express.static(folderPath));
+  app.use(express.static(folderPath, { etag: false }));
 
   app.get("/", (req, res) => {
     if (screenShotter) {
@@ -200,13 +212,16 @@ const start = ({ port }) => {
         transform
       });
 
+      const watchify = watchifyMiddleware.emitter(bundler);
+      watchify.on("update", () => liveReload(scriptFile));
+
       browserifies[scriptFile] = {
         browserify: bundler,
-        watchify: watchifyMiddleware(bundler)
+        watchify
       };
     }
 
-    return browserifies[scriptFile].watchify(req, res);
+    return browserifies[scriptFile].watchify.middleware(req, res);
   };
 
   const handlePage = (req, res) => {
@@ -227,10 +242,8 @@ const start = ({ port }) => {
           <title>sketchbook: ${req.params.script}</title>
         </head>
         <body>
-          <script>
-            ${CLIENT_RELOAD_CODE}
-          </script>
           <script src="/sketch/${req.params.script}.js" type="text/javascript"></script>
+          <script>${CLIENT_RELOAD_CODE}</script>
         </body>
       </html>
     `);

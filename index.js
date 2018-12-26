@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const browserify = require("browserify-middleware");
+const browserify = require("browserify");
 const chokidar = require("chokidar");
 const crypto = require("crypto");
 const express = require("express");
@@ -8,6 +8,8 @@ const fs = require("fs");
 const getPort = require("get-port");
 const path = require("path");
 const subarg = require("subarg");
+const watchifyMiddleware = require("watchify-middleware");
+const browserifyMiddleware = require("browserify-middleware");
 const { Server: WebSocketServer } = require("ws");
 
 const WATCH_IGNORED = /\.git|node_modules|bower_components/;
@@ -68,13 +70,12 @@ const start = ({ port }) => {
   const app = express();
   const server = app.listen(port);
 
-  const wss = new WebSocketServer({
-    server,
-    perMessageDeflate: false
-  });
+  const wss = new WebSocketServer({ server, perMessageDeflate: false });
 
   const folderPath = path.join(process.cwd(), folder);
   const folderGlob = `${folderPath}/*.js`;
+
+  const browserifies = {};
 
   const liveReload = file => {
     wss.clients.forEach(ws => {
@@ -184,18 +185,28 @@ const start = ({ port }) => {
     `);
   });
 
-  const handleScript = (req, res, next) => {
+  const handleScript = (req, res) => {
     const scriptFile = path.join(process.cwd(), folder, req.params.script);
 
     if (!fs.existsSync(scriptFile)) {
       return res.send();
     }
 
-    return browserify(scriptFile, { gzip: true, cache: "dynamic", transform })(
-      req,
-      res,
-      next
-    );
+    if (!browserifies[scriptFile]) {
+      const bundler = browserify(scriptFile, {
+        cache: {},
+        packageCache: {},
+        basedir: process.cwd(),
+        transform
+      });
+
+      browserifies[scriptFile] = {
+        browserify: bundler,
+        watchify: watchifyMiddleware(bundler)
+      };
+    }
+
+    return browserifies[scriptFile].watchify(req, res);
   };
 
   const handlePage = (req, res) => {
@@ -227,16 +238,16 @@ const start = ({ port }) => {
 
   app.get(
     "/frontend.js",
-    browserify(path.join(__dirname, "frontend.js"), {
+    browserifyMiddleware(path.join(__dirname, "frontend.js"), {
       gzip: true,
       cache: true,
       precompile: true
     })
   );
 
-  app.get("/sketch/:script", (req, res, next) => {
+  app.get("/sketch/:script", (req, res) => {
     if (req.params.script.endsWith(".js")) {
-      return handleScript(req, res, next);
+      return handleScript(req, res);
     } else {
       return handlePage(req, res);
     }

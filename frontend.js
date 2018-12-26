@@ -101,20 +101,6 @@ const connect = () => {
   socket = createWebSocket();
 };
 
-const domUpdate = (parent, root, state) => {
-  let prev = [];
-
-  state.addWatch("dom-update", (_, __, curr) => {
-    curr = hdom.normalizeTree(root(curr));
-
-    if (curr != null) {
-      hdom.diffElement(parent, prev, curr);
-
-      prev = curr;
-    }
-  });
-};
-
 const root = state => {
   return [
     "div.w-100.sans-serif.bg-white",
@@ -151,6 +137,20 @@ const root = state => {
       ]
     ]
   ];
+};
+
+const domUpdate = (parent, root, state) => {
+  let prev = [];
+
+  state.addWatch("dom-update", (_, __, curr) => {
+    curr = hdom.normalizeTree({}, root(curr));
+
+    if (curr != null) {
+      hdom.diffTree({}, hdom.DEFAULT_IMPL, parent, prev, curr);
+
+      prev = curr;
+    }
+  });
 };
 
 domUpdate(document.body, root, state);

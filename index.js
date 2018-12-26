@@ -185,7 +185,7 @@ const start = ({ port }) => {
   });
 
   const handleScript = (req, res, next) => {
-    const scriptFile = path.join(process.cwd(), folder, `${req.params.script}`);
+    const scriptFile = path.join(process.cwd(), folder, req.params.script);
 
     if (!fs.existsSync(scriptFile)) {
       return res.send();

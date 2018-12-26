@@ -13,20 +13,20 @@
     "test": "node index.js --port 3000 ./test/"
   },
   "dependencies": {
-    "@thi.ng/atom": "^1.4.6",
-    "@thi.ng/hdom": "^3.0.32",
+    "@thi.ng/atom": "^1.5.8",
+    "@thi.ng/hdom": "^6.1.0",
     "async": "^2.6.1",
     "browserify-middleware": "^8.1.1",
     "chokidar": "^2.0.4",
-    "debug": "^4.1.0",
-    "electron": "^2.0.11",
-    "express": "^4.16.3",
-    "get-port": "^4.0.0",
+    "debug": "^4.1.1",
+    "electron": "^4.0.0",
+    "express": "^4.16.4",
+    "get-port": "^4.1.0",
     "level": "^4.0.0",
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.11",
     "node-ipc": "^9.1.1",
     "subarg": "^1.0.0",
     "tachyons": "^4.11.1",
-    "ws": "^6.0.0"
+    "ws": "^6.1.2"
   }
 }

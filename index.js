@@ -23,7 +23,7 @@ const CLIENT_RELOAD_CODE = fs.readFileSync(
 const ScreenShotter = require("./screen-shotter");
 
 const argv = subarg(process.argv.slice(2));
-const port = argv.port || "3000";
+const port = argv.port || 3000;
 const folder = argv._[0];
 const runScreenShotter = argv.screenshots !== false;
 
